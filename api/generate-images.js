@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
+
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -8,67 +9,68 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Gunakan method POST" });
+    return res.status(405).json({
+      error: "Gunakan method POST"
+    });
   }
 
-  const { activities } = req.body;
+  const { recommendation } = req.body;
 
-  if (!activities) {
-    return res.status(400).json({ error: "Data aktivitas kosong" });
+  if (!recommendation) {
+
+    return res.status(400).json({
+      error: "Hasil rekomendasi kosong"
+    });
+
   }
 
   try {
+
     const prompt = `
-Berdasarkan aktivitas berikut:
+Buat sebuah cover album musik yang menarik berdasarkan rekomendasi berikut:
 
-${activities}
-
-Bayangkan mahasiswa tersebut direpresentasikan sebagai seekor hewan lucu.
-
-Tentukan:
-
-- jenis hewan yang sesuai dengan kepribadian dan pola aktivitasnya
-
-- ekspresi wajah (rajin, malas, santai, lelah, fokus, dll)
-
-- gaya visual yang lucu, imut, dan menarik
-
-Buat satu gambar saja (single character), bukan banyak adegan.
+${recommendation}
 
 Ketentuan:
 
-- gaya ilustrasi kartun / chibi / cute
+- gaya modern dan profesional
+- cocok untuk aplikasi streaming musik
+- warna menarik dan artistik
+- kualitas tinggi
+- tidak ada tulisan atau watermark
+- fokus pada suasana musik yang direkomendasikan
+- satu gambar saja
+`;
 
-- warna cerah dan menarik
+    const response = await fetch(
+      "https://api.openai.com/v1/images/generations",
+      {
+        method: "POST",
 
-- fokus pada satu karakter utama
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization":
+            `Bearer ${process.env.OPENAI_API_KEY}`
+        },
 
-- boleh menambahkan properti kecil (buku, HP, bantal, dll) sesuai aktivitas
-
-- jangan menampilkan teks di dalam gambar
-
-Gambar harus mencerminkan kepribadian berdasarkan aktivitas tersebut.
-    `;
-
-    const response = await fetch("https://api.openai.com/v1/images/generations", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-image-1",
-        prompt: prompt,
-        size: "1024x1024"
-      })
-    });
+        body: JSON.stringify({
+          model: "gpt-image-1",
+          prompt: prompt,
+          size: "1024x1024"
+        })
+      }
+    );
 
     const data = await response.json();
 
     if (!response.ok) {
+
       return res.status(response.status).json({
-        error: data.error?.message || "Gagal membuat gambar"
+        error:
+          data.error?.message ||
+          "Gagal membuat gambar"
       });
+
     }
 
     return res.status(200).json({
@@ -76,8 +78,12 @@ Gambar harus mencerminkan kepribadian berdasarkan aktivitas tersebut.
     });
 
   } catch (error) {
+
+    console.error(error);
+
     return res.status(500).json({
-      error: "Gagal menghubungi image API"
+      error: "Gagal menghubungi Image API"
     });
+
   }
 }
