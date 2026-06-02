@@ -17,11 +17,9 @@ export default async function handler(req, res) {
   const { recommendation } = req.body;
 
   if (!recommendation) {
-
     return res.status(400).json({
       error: "Hasil rekomendasi kosong"
     });
-
   }
 
   try {
@@ -32,7 +30,6 @@ Buat sebuah cover album musik yang menarik berdasarkan rekomendasi berikut:
 ${recommendation}
 
 Ketentuan:
-
 - gaya modern dan profesional
 - cocok untuk aplikasi streaming musik
 - warna menarik dan artistik
@@ -40,49 +37,36 @@ Ketentuan:
 - tidak ada tulisan atau watermark
 - fokus pada suasana musik yang direkomendasikan
 - satu gambar saja
-`;
+- nuansa visual harus sesuai mood musik
+- tampak seperti cover album premium
+- background estetik
+    `.trim();
 
-    const response = await fetch(
-      "https://api.openai.com/v1/images/generations",
-      {
-        method: "POST",
+    const imageUrl =
+      `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true`;
 
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization":
-            `Bearer ${process.env.OPENAI_API_KEY}`
-        },
+    const imageResponse = await fetch(imageUrl);
 
-        body: JSON.stringify({
-          model: "gpt-image-1",
-          prompt: prompt,
-          size: "1024x1024"
-        })
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-
-      return res.status(response.status).json({
-        error:
-          data.error?.message ||
-          "Gagal membuat gambar"
+    if (!imageResponse.ok) {
+      return res.status(imageResponse.status).json({
+        error: "Gagal membuat gambar dari image API gratis"
       });
-
     }
 
+    const arrayBuffer = await imageResponse.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64Image = buffer.toString("base64");
+
     return res.status(200).json({
-      image: data.data[0].b64_json
+      image: base64Image
     });
 
   } catch (error) {
 
-    console.error(error);
+    console.error("Generate image error:", error);
 
     return res.status(500).json({
-      error: "Gagal menghubungi Image API"
+      error: "Gagal menghubungi image API"
     });
 
   }
